@@ -5,26 +5,28 @@ import (
 	"io/ioutil"
 	"log"
 	"net/http"
+	"os"
+	// "githhub.com/Microservices/handlers/hello.go"
 )
 
 func main() {
 
-	// l := log.New(os.Stdout, "Product-api", log.LstdFlags)
-	// hh := handlers.NewHello(l)
-	// sm := http.NewServeMux()
-	// sm.Handle("/", hh)
+	l := log.New(os.Stdout, log.LstdFlags)
+	hh := handlers.NewHello(l)
+	sm := http.NewServeMux()
+	sm.Handle("/", hh)
 
 	http.HandleFunc("/", func(rw http.ResponseWriter, r *http.Request) {
 		log.Println("Hello World")
 		d, err := ioutil.ReadAll(r.Body)
 		if err != nil {
 			http.Error(rw, "Ooopss", http.StatusBadRequest)
-			// rw.WriteHeader(http.StatusBadRequest)
-			// rw.Write([]byte("Oppppppsss"))
+			rw.WriteHeader(http.StatusBadRequest)
+			rw.Write([]byte("Oppppppsss"))
 			return
 		}
 
-		// log.Printf("Data %s\n", d)
+		log.Printf("Data %s\n", d)
 		fmt.Fprintf(rw, "Date %s\n", d)
 	})
 
