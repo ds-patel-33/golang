@@ -1,18 +1,13 @@
-
-
 package main
 
 import "testing"
 
-
 func TestGetAllArticles(t *testing.T) {
 	alist := getAllArticles()
 
-	
 	if len(alist) != len(articleList) {
 		t.Fail()
 	}
-
 
 	for i, v := range alist {
 		if v.Content != articleList[i].Content ||
@@ -25,11 +20,10 @@ func TestGetAllArticles(t *testing.T) {
 	}
 }
 
-
 func TestGetArticleByID(t *testing.T) {
 	a, err := getArticleByID(1)
 
-	if err != nil || a.ID != 1 || a.Title != "Article 1" || a.Content != "Article 1 body" {
+	if err != nil || a.Title != "Article 1" || a.ID != 1 || a.Content != "Article 1 body" {
 		t.Fail()
 	}
 }
