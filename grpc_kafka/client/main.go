@@ -35,6 +35,7 @@ func main() {
 		name := inputData.Name
 
 		req := &proto.Request{Username: string(username), Name: string(name)}
+
 		if response, err := client.Add(ctx, req); err == nil {
 			ctx.JSON(http.StatusOK, gin.H{
 				"result": fmt.Sprint(response.Result),
