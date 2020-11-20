@@ -1,14 +1,19 @@
 package main
 
 import (
-	"bytes"
+	"database/sql"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"log"
 	"net/http"
+	"strconv"
+
+	_ "github.com/go-sql-driver/mysql"
+	"github.com/gorilla/mux"
 )
 
+//Todo Struct
 type Todo struct {
 	UserID    int    `json:"userId"`
 	ID        int    `json:"id"`
@@ -16,88 +21,176 @@ type Todo struct {
 	Completed bool   `json:"completed"`
 }
 
+const (
+	//DBDriver name
+	DBDriver = "mysql"
+
+	//DBName Schema name
+	DBName = "todo"
+
+	//DBUser for useranme of database
+	DBUser = "root"
+
+	//DBPassword for password
+	DBPassword = "dhirajpatel"
+
+	//DBURL for database connection url
+	DBURL = DBUser + ":" + DBPassword + "@/" + DBName
+)
+
+// GetDB return DB
+func GetDB() (*sql.DB, error) {
+	db, err := sql.Open(DBDriver, DBURL)
+	if err != nil {
+		return db, err
+	}
+	err = db.Ping()
+	if err != nil {
+		return db, err
+	}
+	return db, nil
+}
+
 func main() {
-	get()
-	post()
-	put()
-	delete()
+	router := mux.NewRouter()
+
+	router.HandleFunc("/tasks", post).Methods("POST")
+
+	router.HandleFunc("/tasks", get).Methods("GET")
+
+	router.HandleFunc("/tasks/{uid}/{id}", put).Methods("PUT")
+
+	router.HandleFunc("/tasks/{uid}/{id}", delete).Methods("DELETE")
+
+	http.ListenAndServe(":5000", router)
+
 }
 
-func get() {
-	fmt.Println("1. Performing Http Get...")
-	resp, err := http.Get("https://jsonplaceholder.typicode.com/todos/1")
-	if err != nil {
-		log.Fatalln(err)
-	}
+func get(w http.ResponseWriter, r *http.Request) {
 
-	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	defer r.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(r.Body)
+	fmt.Println(bodyBytes)
 
 	bodyString := string(bodyBytes)
 	fmt.Println("API Response as String:\n" + bodyString)
 
 	var todoStruct Todo
 	json.Unmarshal(bodyBytes, &todoStruct)
-	fmt.Printf("API Response as struct:\n%+v\n", todoStruct)
+
+	todos := make([]Todo, 0)
+	db, err := GetDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	defer db.Close()
+	rows, err := db.Query(
+		`SELECT userId,
+                  id,
+                  title,
+                  completed
+                FROM todo;
+               `)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	for rows.Next() {
+		t := Todo{}
+		rows.Scan(&t.UserID, &t.ID, &t.Title, &t.Completed)
+		todos = append(todos, t)
+	}
+	log.Println("todos: ", todos)
+
+	w.Header().Set("Content-Type", "application/json")
+	json.NewEncoder(w).Encode(todos)
 }
 
-func post() {
-	fmt.Println("2. Performing Http Post...")
-	todo := Todo{1, 2, "How are You ?", true}
-	jsonReq, err := json.Marshal(todo)
-	resp, err := http.Post("https://jsonplaceholder.typicode.com/todos", "application/json; charset=utf-8", bytes.NewBuffer(jsonReq))
-	if err != nil {
-		log.Fatalln(err)
-	}
+func post(w http.ResponseWriter, r *http.Request) {
 
-	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	defer r.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(r.Body)
 
 	bodyString := string(bodyBytes)
 	fmt.Println("API Response as String:\n" + bodyString)
 
 	var todoStruct Todo
 	json.Unmarshal(bodyBytes, &todoStruct)
-	fmt.Printf("API Response as struct:\n%+v\n", todoStruct)
-}
 
-func put() {
-	fmt.Println("3. Performing Http Put...")
-	todo := Todo{1, 2, "How are You ?", true}
-	jsonReq, err := json.Marshal(todo)
-	req, err := http.NewRequest(http.MethodPut, "https://jsonplaceholder.typicode.com/todos/1", bytes.NewBuffer(jsonReq))
-	req.Header.Set("Content-Type", "application/json; charset=utf-8")
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	db, err := GetDB()
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		return
+	}
+	_, err = db.Exec(
+		`INSERT INTO todo (userId, id, title, completed)
+     VALUES (?, ?, ?, ?)`,
+		todoStruct.UserID, todoStruct.ID, todoStruct.Title, todoStruct.Completed)
+	if err != nil {
+		fmt.Println(err)
+		return
 	}
 
-	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	json.NewEncoder(w).Encode(todoStruct)
+
+}
+
+func put(w http.ResponseWriter, r *http.Request) {
+	userid := mux.Vars(r)["uid"]
+	id := mux.Vars(r)["id"]
+
+	defer r.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(r.Body)
 
 	bodyString := string(bodyBytes)
 	fmt.Println("API Response as String:\n" + bodyString)
 
 	var todoStruct Todo
-	json.Unmarshal(bodyBytes, &todoStruct)
-	fmt.Printf("API Response as struct:\n%+v\n", todoStruct)
-}
 
-func delete() {
-	fmt.Println("4. Performing Http Delete...")
-	todo := Todo{1, 2, "How are You ?", true}
-	jsonReq, err := json.Marshal(todo)
-	req, err := http.NewRequest(http.MethodDelete, "https://jsonplaceholder.typicode.com/todos/1", bytes.NewBuffer(jsonReq))
-	client := &http.Client{}
-	resp, err := client.Do(req)
+	json.Unmarshal(bodyBytes, &todoStruct)
+
+	db, err := GetDB()
 	if err != nil {
-		log.Fatalln(err)
+		fmt.Println(err)
+		return
 	}
 
-	defer resp.Body.Close()
-	bodyBytes, _ := ioutil.ReadAll(resp.Body)
+	_, err = db.Exec(
+		`UPDATE todo SET  title=? , completed=?  WHERE (userId=? AND id=?)`,
+		todoStruct.Title, todoStruct.Completed, userid, id)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	ID, _ := strconv.Atoi(id)
+	UID, _ := strconv.Atoi(id)
+	todoStruct.ID = ID
+	todoStruct.UserID = UID
+	json.NewEncoder(w).Encode(todoStruct)
 
-	bodyString := string(bodyBytes)
-	fmt.Println("API Response as String:\n" + bodyString)
+}
+
+func delete(w http.ResponseWriter, r *http.Request) {
+
+	userid := mux.Vars(r)["uid"]
+	id := mux.Vars(r)["id"]
+
+	fmt.Println(userid)
+	fmt.Println(id)
+
+	db, err := GetDB()
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+	_, err = db.Exec(`DELETE FROM todo WHERE (userId=? AND id=?)`, userid, id)
+	if err != nil {
+		fmt.Println(err)
+		return
+	}
+
+	w.Write([]byte("Data Deleted !"))
+	w.WriteHeader(http.StatusNoContent)
+
 }

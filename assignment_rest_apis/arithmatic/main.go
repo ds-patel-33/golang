@@ -3,36 +3,42 @@ package main
 import (
 	"encoding/json"
 	"fmt"
-	"log"
+	"io/ioutil"
 	"net/http"
 
 	"github.com/gorilla/mux"
 )
 
+//InputData Struct
 type InputData struct {
-	a int `json:"a"`
-	b int `json:"b"`
+	A int `json:"a"`
+	B int `json:"b"`
 }
 
+//OutputData Struct
 type OutputData struct {
-	ans float64 `json:"ans"`
+	Ans float64 `json:"ans"`
 }
 
 //Add Function
 func Add(w http.ResponseWriter, r *http.Request) {
-	var inputData InputData
+
 	var outputData OutputData
-	json.NewDecoder(r.Body).Decode(&inputData)
+	defer r.Body.Close()
+	bodyBytes, _ := ioutil.ReadAll(r.Body)
 
-	a := float64(inputData.a)
-	b := float64(inputData.b)
+	var inputData InputData
+	json.Unmarshal(bodyBytes, &inputData)
 
-	fmt.Println(inputData.a)
-	fmt.Println(inputData.b)
+	fmt.Println(inputData.A)
+	fmt.Println(inputData.B)
+
+	a := float64(inputData.A)
+	b := float64(inputData.B)
 
 	add := a + b
 	fmt.Print(add)
-	outputData.ans = adds
+	outputData.Ans = add
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -40,20 +46,21 @@ func Add(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(outputData)
 }
 
+//Sub function
 func Sub(w http.ResponseWriter, r *http.Request) {
 	var inputData InputData
 	var outputData OutputData
 	json.NewDecoder(r.Body).Decode(&inputData)
 
-	a := float64(inputData.a)
-	b := float64(inputData.b)
+	a := float64(inputData.A)
+	b := float64(inputData.B)
 
-	fmt.Println(inputData.a)
-	fmt.Println(inputData.b)
+	fmt.Println(inputData.A)
+	fmt.Println(inputData.B)
 
 	add := a - b
 	fmt.Print(add)
-	outputData.ans = adds
+	outputData.Ans = add
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -61,20 +68,21 @@ func Sub(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(outputData)
 }
 
+//Mul function
 func Mul(w http.ResponseWriter, r *http.Request) {
 	var inputData InputData
 	var outputData OutputData
 	json.NewDecoder(r.Body).Decode(&inputData)
 
-	a := float64(inputData.a)
-	b := float64(inputData.b)
+	a := float64(inputData.A)
+	b := float64(inputData.B)
 
-	fmt.Println(inputData.a)
-	fmt.Println(inputData.b)
+	fmt.Println(inputData.A)
+	fmt.Println(inputData.B)
 
 	add := a * b
 	fmt.Print(add)
-	outputData.ans = adds
+	outputData.Ans = add
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -82,20 +90,21 @@ func Mul(w http.ResponseWriter, r *http.Request) {
 	json.NewEncoder(w).Encode(outputData)
 }
 
+//Div function
 func Div(w http.ResponseWriter, r *http.Request) {
 	var inputData InputData
 	var outputData OutputData
 	json.NewDecoder(r.Body).Decode(&inputData)
 
-	a := float64(inputData.a)
-	b := float64(inputData.b)
+	a := float64(inputData.A)
+	b := float64(inputData.B)
 
-	fmt.Println(inputData.a)
-	fmt.Println(inputData.b)
+	fmt.Println(inputData.A)
+	fmt.Println(inputData.B)
 
 	add := a / b
 	fmt.Print(add)
-	outputData.ans = adds
+	outputData.Ans = add
 
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
@@ -104,10 +113,10 @@ func Div(w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	router := mux.NewRouter()
-	r.HandleFunc("/add", Add).Methods(http.MethodPost)
-	r.HandleFunc("/sub", Sub).Methods(http.MethodPost)
-	r.HandleFunc("/mul", Mul).Methods(http.MethodPost)
-	r.HandleFunc("/div", div).Methods(http.MethodPost)
-	log.Fatal(http.ListenAndServe(":8080", r))
+	r := mux.NewRouter()
+	r.HandleFunc("/add", Add).Methods("POST")
+	r.HandleFunc("/sub", Sub).Methods("POST")
+	r.HandleFunc("/mul", Mul).Methods("POST")
+	r.HandleFunc("/div", Div).Methods("POST")
+	http.ListenAndServe(":5000", r)
 }
