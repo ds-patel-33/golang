@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GRPC/proto"
+	"github.com/GRPC/proto"
 	"context"
 	"fmt"
 	"net"
@@ -31,22 +31,22 @@ func main() {
 
 func (s *server) AddtoKafka(ctx context.Context, request *proto.Request) (*proto.Response, error) {
 	a, b := request.GetUsername(), request.GetName()
-	jobString := a + "&" + b
-	fmt.Print(jobString)
-	//var result = "ok"
+	data := a + "&" + b
+	fmt.Print(data)
+	
 	p, err := kafka.NewProducer(&kafka.ConfigMap{"bootstrap.servers": "localhost:9092"})
 	if err != nil {
 		panic(err)
 	}
 
 	// Produce messages to topic (asynchronously)
-	topic := "jobs-topic1"
-	for _, word := range []string{string(jobString)} {
+	topic := "data-topic"
+	for _, word := range []string{string(data)} {
 		p.Produce(&kafka.Message{
 			TopicPartition: kafka.TopicPartition{Topic: &topic, Partition: 0},
 			Value:          []byte(word),
 		}, nil)
 	}
 
-	return &proto.Response{Status: jobString}, nil
+	return &proto.Response{Status: data}, nil
 }

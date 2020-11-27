@@ -1,7 +1,7 @@
 package main
 
 import (
-	"GRPC/proto"
+	"github.com/GRPC/proto"
 	"database/sql"
 	"fmt"
 	"log"
@@ -19,7 +19,7 @@ const (
 	DBDriver = "mysql"
 
 	//DBName Schema name
-	DBName = "employees"
+	DBName = "users"
 
 	//DBUser for useranme of database
 	DBUser = "root"
@@ -32,7 +32,7 @@ const (
 )
 
 func dbConn() (db *sql.DB) {
-	//DBDriver name
+	
 
 	db, err := sql.Open(DBDriver, DBURL)
 	if err != nil {
@@ -79,7 +79,7 @@ func main() {
 				panic(err)
 			}
 
-			c.SubscribeTopics([]string{"jobs-topic1"}, nil)
+			c.SubscribeTopics([]string{"data-topic"}, nil)
 
 			for {
 				msg, err := c.ReadMessage(-1)
@@ -88,7 +88,7 @@ func main() {
 					fmt.Printf("Received from Kafka %s: %s\n", msg.TopicPartition, string(msg.Value))
 					data := string(msg.Value)
 					ctx.JSON(http.StatusOK, gin.H{
-						"result1": fmt.Sprint(data),
+						"result": fmt.Sprint(data),
 					})
 					addUserInMySQL(data)
 				} else {
@@ -100,7 +100,7 @@ func main() {
 			c.Close()
 
 		} else {
-			ctx.JSON(http.StatusInternalServerError, gin.H{"error1": err.Error()})
+			ctx.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
 		}
 	})
 
