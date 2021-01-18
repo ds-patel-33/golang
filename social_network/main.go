@@ -93,7 +93,6 @@ func CreateNewPost(c *gin.Context) {
 		exception := err.Error()
 		c.JSON(500, gin.H{"exception": exception})
 		return
-
 	}
 
 	insertID, _ := rs.LastInsertId()
@@ -117,8 +116,8 @@ func UpdatePost(c *gin.Context) {
 
 	var input UpdatePostInput
 	c.BindJSON(&input)
-	title := strings.TrimSpace(input.Content)
-	content := strings.TrimSpace(input.Title)
+	title := strings.TrimSpace(input.Title)
+	content := strings.TrimSpace(input.Content)
 	postID := input.PostID
 
 	db := dbConn()
@@ -158,7 +157,7 @@ func DeletePost(c *gin.Context) {
 
 //UserInput struct
 type UserInput struct {
-	Username      string `json:"useranme"`
+	Username      string `json:"username"`
 	Email         string `json:"email"`
 	Password      string `json:"password"`
 	PasswordAgain string `json:"password_again"`
@@ -175,9 +174,9 @@ func UserSignup(c *gin.Context) {
 	var input UserInput
 	c.BindJSON(&input)
 	username := strings.TrimSpace(input.Username)
-	email := strings.TrimSpace(c.PostForm(input.Email))
-	password := strings.TrimSpace(c.PostForm(input.Password))
-	passwordAgain := strings.TrimSpace(c.PostForm(input.PasswordAgain))
+	email := strings.TrimSpace(input.Email)
+	password := strings.TrimSpace(input.Password)
+	passwordAgain := strings.TrimSpace(input.PasswordAgain)
 
 	mailErr := checkmail.ValidateFormat(email)
 
@@ -208,7 +207,7 @@ func UserSignup(c *gin.Context) {
 	} else {
 
 		stmt, _ := db.Prepare("INSERT INTO users(username, email, password, joined) VALUES (?, ?, ?, ?)")
-		_, err := stmt.Exec(username, email, hash(password), time.Now())
+		_, err := stmt.Exec(username, email, password, time.Now())
 
 		if err != nil {
 			exception := err.Error()
@@ -223,12 +222,18 @@ func UserSignup(c *gin.Context) {
 	c.JSON(200, gin.H{"msg": resp})
 }
 
+//LoginInput struct
+type LoginInput struct {
+	Username string `json:"username"`
+	Password string `json:"password"`
+}
+
 //UserLogin function
 func UserLogin(c *gin.Context) {
 	resp := make(map[string]interface{})
 
-	var input UserInput
-
+	var input LoginInput
+	c.BindJSON(&input)
 	rusername := strings.TrimSpace(input.Username)
 	rpassword := strings.TrimSpace(input.Password)
 
@@ -243,12 +248,12 @@ func UserLogin(c *gin.Context) {
 
 	db.QueryRow("SELECT COUNT(id) AS userCount, id, username, password FROM users WHERE username=?", rusername).Scan(&userCount, &id, &username, &password)
 
-	err := bcrypt.CompareHashAndPassword([]byte(password), []byte(rpassword))
-	if err != nil {
-		exception := err.Error()
-		c.JSON(500, gin.H{"exception": exception})
-		return
-	}
+	//err := bcrypt.CompareHashAndPassword([]byte(password), []byte(rpassword))
+	// if err != nil {
+	// 	exception := err.Error()
+	// 	c.JSON(500, gin.H{"exception": exception})
+	// 	return
+	// }
 
 	if rusername == "" || rpassword == "" {
 		resp["mssg"] = "Some values are missing!!"
